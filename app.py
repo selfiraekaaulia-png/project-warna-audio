@@ -26,9 +26,11 @@ uploaded_file = st.file_uploader(
 
 # EKSTRAK FITUR
 def extract_feature(file_name):
+
     audio, sample_rate = librosa.load(
         file_name,
-        sr=None
+        sr=22050,
+        mono=True
     )
 
     mfccs_features = librosa.feature.mfcc(
@@ -47,16 +49,21 @@ def extract_feature(file_name):
 # PREDIKSI
 if uploaded_file is not None:
 
-    features = extract_feature(uploaded_file)
+    try:
 
-    features_scaled = scaler.transform([features])
+        features = extract_feature(uploaded_file)
 
-    prediction = model.predict(features_scaled)
+        features_scaled = scaler.transform([features])
 
-    predicted_label = encoder.inverse_transform(
-        [np.argmax(prediction)]
-    )
+        prediction = model.predict(features_scaled)
 
-    st.success(
-        f"Hasil Prediksi: {predicted_label[0]}"
-    )
+        predicted_label = encoder.inverse_transform(
+            [np.argmax(prediction)]
+        )
+
+        st.success(
+            f"Hasil Prediksi: {predicted_label[0]}"
+        )
+
+    except Exception as e:
+        st.error(f"Error: {e}")
