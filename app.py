@@ -1,8 +1,8 @@
 import streamlit as st
 import numpy as np
 import librosa
-from keras.models import load_model
 import pickle
+from tensorflow.keras.models import load_model
 
 # LOAD MODEL
 model = load_model("model_ann.h5")
@@ -18,29 +18,28 @@ with open("encoder.pkl", "rb") as f:
 # JUDUL WEB
 st.title("Klasifikasi Suara Warna")
 
-# UPLOAD AUDIO
 uploaded_file = st.file_uploader(
     "Upload suara WAV",
     type=["wav"]
 )
 
 # EKSTRAK FITUR
-def extract_feature(file_name):
+def extract_feature(file):
 
     audio, sample_rate = librosa.load(
-        file_name,
+        file,
         sr=22050,
         mono=True
     )
 
-    mfccs_features = librosa.feature.mfcc(
+    mfccs = librosa.feature.mfcc(
         y=audio,
         sr=sample_rate,
         n_mfcc=40
     )
 
     mfccs_scaled_features = np.mean(
-        mfccs_features.T,
+        mfccs.T,
         axis=0
     )
 
@@ -53,17 +52,22 @@ if uploaded_file is not None:
 
         features = extract_feature(uploaded_file)
 
-        features_scaled = scaler.transform([features])
+        features = scaler.transform([features])
 
-        prediction = model.predict(features_scaled)
+        prediction = model.predict(features)
 
-        predicted_label = encoder.inverse_transform(
-            [np.argmax(prediction)]
-        )
+        predicted_class = np.argmax(prediction)
+
+        label = encoder.inverse_transform(
+            [predicted_class]
+        )[0]
 
         st.success(
-            f"Hasil Prediksi: {predicted_label[0]}"
+            f"Hasil Prediksi: {label}"
         )
 
     except Exception as e:
-        st.error(f"Error: {e}")
+
+        st.error(
+            f"Error: {str(e)}"
+        )
